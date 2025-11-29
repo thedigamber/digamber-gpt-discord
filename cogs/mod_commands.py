@@ -2,24 +2,63 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import asyncio
-from datetime import timedelta
 
 class ModCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="setup", description="Setup AI channel for this server")
+    @commands.hybrid_command(name="setchannel", description="Set AI auto-response channel for this server")
     @commands.has_permissions(administrator=True)
-    @app_commands.describe(channel="Channel where AI will respond")
-    async def setup_ai_channel(self, ctx, channel: discord.TextChannel):
-        """Setup AI channel for the server"""
-        # In a real bot, you'd save this to a database
+    @app_commands.describe(channel="Channel where AI will auto-respond to messages")
+    async def set_ai_channel(self, ctx, channel: discord.TextChannel):
+        """Set AI channel for auto-response"""
+        # Store in bot memory
+        self.bot.ai_channels[str(ctx.guild.id)] = str(channel.id)
+        
         embed = discord.Embed(
-            title="✅ AI Channel Setup",
-            description=f"AI features enabled in {channel.mention}",
+            title="✅ AI Channel Setup Complete",
+            description=f"**{channel.mention}** is now the AI channel!",
             color=0x00ff00
         )
-        embed.add_field(name="Available Commands", value="• /ai - Chat with AI\n• /image - Generate images\n• /clear - Clear chat history")
+        embed.add_field(
+            name="How it works:", 
+            value="• **In this channel**: Just type anything - AI will auto-reply\n• **Other channels**: Use `/ask` command\n• **No commands needed** in AI channel!",
+            inline=False
+        )
+        embed.set_footer(text="ChatGPT-style experience activated! 🚀")
+        
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name="removechannel", description="Remove AI auto-response channel")
+    @commands.has_permissions(administrator=True)
+    async def remove_ai_channel(self, ctx):
+        """Remove AI channel"""
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.bot.ai_channels:
+            del self.bot.ai_channels[guild_id]
+            await ctx.send("✅ AI auto-response disabled for this server.")
+        else:
+            await ctx.send("ℹ️ No AI channel was set for this server.")
+
+    @commands.hybrid_command(name="aistatus", description="Check AI channel status")
+    async def ai_status(self, ctx):
+        """Check AI channel status"""
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.bot.ai_channels:
+            channel_id = self.bot.ai_channels[guild_id]
+            channel = ctx.guild.get_channel(int(channel_id))
+            embed = discord.Embed(
+                title="🤖 AI Channel Status",
+                description=f"**Auto-Response Channel:** {channel.mention if channel else 'Channel not found'}\n\n**Mode:** ChatGPT-style (No commands needed)",
+                color=0x3498db
+            )
+        else:
+            embed = discord.Embed(
+                title="🤖 AI Channel Status", 
+                description="No AI channel set. Use `/setchannel` to enable auto-response mode.",
+                color=0xe74c3c
+            )
+        
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="purge", description="Delete multiple messages")
