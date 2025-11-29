@@ -107,4 +107,4 @@ Enjoy 🚀
 ```
 {}
 ```
-`> Auto-create first run pe.`
+> Auto-create first run pe.
