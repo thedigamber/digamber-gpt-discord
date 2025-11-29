@@ -17,21 +17,17 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "🤖 Advance AI Bot - Operational"
-
-@app.route('/status')
-def status():
-    return {"status": "online", "timestamp": datetime.now().isoformat()}
+    return "🤖 DigamberGPT - Operational"
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-class AdvanceBot(commands.Bot):
+class ChatGPTBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
         super().__init__(
-            command_prefix=config['settings']['prefix'],
+            command_prefix="!",
             intents=intents,
             help_command=None,
             case_insensitive=True
@@ -39,17 +35,14 @@ class AdvanceBot(commands.Bot):
         self.config = config
         self.start_time = datetime.now()
         self.session = None
+        self.ai_channels = {}  # Store AI channels per server
 
     async def setup_hook(self):
         # Start session
         self.session = aiohttp.ClientSession()
         
         # Load cogs
-        cogs = [
-            'cogs.ai_commands',
-            'cogs.mod_commands', 
-            'cogs.fun_commands'
-        ]
+        cogs = ['cogs.ai_commands', 'cogs.mod_commands']
         
         for cog in cogs:
             try:
@@ -65,13 +58,11 @@ class AdvanceBot(commands.Bot):
         
         # Start tasks
         self.update_presence.start()
-        self.cleanup_temp.start()
 
     async def on_ready(self):
         print(f"\n🚀 {self.user} is ONLINE!")
         print(f"📊 Servers: {len(self.guilds)}")
         print(f"👥 Users: {sum(g.member_count for g in self.guilds)}")
-        print(f"⏰ Started: {self.start_time}")
         
         # Start Flask in background for Render
         if os.environ.get('RENDER'):
@@ -82,42 +73,52 @@ class AdvanceBot(commands.Bot):
     async def on_message(self, message):
         if message.author.bot:
             return
+
+        # Check if message is in AI channel
+        guild_id = str(message.guild.id)
+        
+        if guild_id in self.ai_channels:
+            ai_channel_id = self.ai_channels[guild_id]
             
-        # Auto-moderation
-        await self.auto_moderate(message)
+            # If message is in AI channel, process automatically
+            if str(message.channel.id) == ai_channel_id:
+                # Ignore commands
+                if not message.content.startswith('!'):
+                    await self.process_ai_message(message)
+                    return
+        
+        # Process commands for other channels
         await self.process_commands(message)
 
-    async def auto_moderate(self, message):
-        """Auto moderation features"""
-        content = message.content.lower()
-        
-        # Delete links if enabled
-        if self.config['settings']['delete_links']:
-            if any(link in content for link in ['http://', 'https://', 'www.']):
-                try:
-                    await message.delete()
-                    await message.channel.send(
-                        f"❌ {message.author.mention}, Links are not allowed here!",
-                        delete_after=5
-                    )
-                    return
-                except:
-                    pass
+    async def process_ai_message(self, message):
+        """Process AI messages automatically"""
+        try:
+            # Get AI cog
+            ai_cog = self.get_cog('AICommands')
+            if ai_cog:
+                async with message.channel.typing():
+                    response = await ai_cog.get_ai_response(message.content)
+                    
+                    # Check if user wants image generation
+                    if any(word in message.content.lower() for word in ['image', 'picture', 'photo', 'generate image', 'draw', 'create image']):
+                        # Send image generation message
+                        await message.reply("🖼️ Image generation feature coming soon! Currently I can only chat.")
+                    else:
+                        # Send AI response
+                        await message.reply(response)
+                        
+        except Exception as e:
+            print(f"AI processing error: {e}")
 
     @tasks.loop(minutes=10)
     async def update_presence(self):
         activities = [
             discord.Activity(type=discord.ActivityType.watching, name=f"{len(self.guilds)} servers"),
-            discord.Activity(type=discord.ActivityType.listening, name="/ai | DigamberGPT"),
-            discord.Activity(type=discord.ActivityType.playing, name="Advanced AI Mode")
+            discord.Activity(type=discord.ActivityType.listening, name="ChatGPT-style AI"),
+            discord.Activity(type=discord.ActivityType.playing, name="Auto-Response Mode")
         ]
         activity = activities[(datetime.now().minute // 10) % len(activities)]
         await self.change_presence(activity=activity)
-
-    @tasks.loop(hours=24)
-    async def cleanup_temp(self):
-        """Daily cleanup tasks"""
-        print("🧹 Performing daily cleanup...")
 
     async def close(self):
         if self.session:
@@ -126,5 +127,5 @@ class AdvanceBot(commands.Bot):
 
 # Run bot
 if __name__ == "__main__":
-    bot = AdvanceBot()
+    bot = ChatGPTBot()
     bot.run(os.getenv("DISCORD_TOKEN"))
