@@ -103,8 +103,8 @@ Enjoy 🚀
 
 # 6️⃣ **channels.json**  
 
+
 ```
-json
 {}
 
-> Auto-create first run pe.
+`> Auto-create first run pe.`
