@@ -1,11 +1,10 @@
-markdown
 # DigamberGPT V2 PRO — Discord AI Bot
 
 A free, powerful AI chatbot for Discord using DeepSeek API.
 
 ## Features
 - Responds only in the admin-set channel
-- Slash Commands: `/setchannel #chat` and `/ask your_question`
+- Slash Commands: `/setchannel` and `/ask your_question`
 - Typing indicator: "DigamberGPT is thinking..."
 - Auto-delete links sent by users
 - Message logs for each server
@@ -39,8 +38,8 @@ DEEPSEEK_API_KEY=your_deepseek_key
 4. Deploy to Render
 
 · Select "Web Service" → Python
-· Build Command: pip install -r requirements.txt
-· Start Command: python main.py
+· Build Command: `pip install -r requirements.txt`
+· Start Command: `python main.py`
 · Logs auto-create & bot stays online.
 
 5. Discord Setup
@@ -48,7 +47,7 @@ DEEPSEEK_API_KEY=your_deepseek_key
 Set AI chat channel:
 
 ```bash
-/setchannel #your-channel
+/setchannel
 ```
 
 Ask bot anything:
@@ -63,12 +62,10 @@ Enjoy 🚀
 
 Note: channels.json automatically creates on first run.
 
-```
-
----
 
 ## **6. channels.json** 
-```json
+```
+json
 {}
 ```
 2. Install Dependencies
@@ -98,7 +95,7 @@ Set AI chat channel:
 Ask bot anything:
 
 
-/ask What is the meaning of life?
+`/ask` What is the meaning of life?
 
 Enjoy 🚀
 
@@ -106,7 +103,8 @@ Enjoy 🚀
 
 # 6️⃣ **channels.json**  
 
-```json
+```
+json
 {}
 
 > Auto-create first run pe.
