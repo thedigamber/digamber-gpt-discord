@@ -1,38 +1,48 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import random
 import asyncio
-from datetime import timedelta
 
-class ModCommands(commands.Cog):
+class FunCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="setup", description="Setup AI channel for this server")
-    @commands.has_permissions(administrator=True)
-    @app_commands.describe(channel="Channel where AI will respond")
-    async def setup_ai_channel(self, ctx, channel: discord.TextChannel):
-        """Setup AI channel for the server"""
-        # In a real bot, you'd save this to a database
+    @commands.hybrid_command(name="quote", description="Get an inspirational quote")
+    async def inspirational_quote(self, ctx):
+        """Get random inspirational quote"""
+        quotes = [
+            "The only way to do great work is to love what you do. - Steve Jobs",
+            "Innovation distinguishes between a leader and a follower. - Steve Jobs",
+            "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+            "Strive not to be a success, but rather to be of value. - Albert Einstein",
+            "The way to get started is to quit talking and begin doing. - Walt Disney"
+        ]
+        
         embed = discord.Embed(
-            title="✅ AI Channel Setup",
-            description=f"AI features enabled in {channel.mention}",
-            color=0x00ff00
+            title="💫 Inspirational Quote",
+            description=random.choice(quotes),
+            color=0xf39c12
         )
-        embed.add_field(name="Available Commands", value="• /ai - Chat with AI\n• /image - Generate images\n• /clear - Clear chat history")
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="purge", description="Delete multiple messages")
-    @commands.has_permissions(manage_messages=True)
-    @app_commands.describe(amount="Number of messages to delete (1-100)")
-    async def purge_messages(self, ctx, amount: int = 10):
-        """Bulk delete messages"""
-        if amount < 1 or amount > 100:
-            await ctx.send("❌ Amount must be between 1-100", ephemeral=True)
-            return
-            
-        deleted = await ctx.channel.purge(limit=amount + 1)
-        await ctx.send(f"✅ Deleted {len(deleted) - 1} messages", delete_after=5)
+    @commands.hybrid_command(name="poll", description="Create a quick poll")
+    @app_commands.describe(question="The poll question", option1="First option", option2="Second option")
+    async def create_poll(self, ctx, question: str, option1: str, option2: str):
+        """Create a simple poll"""
+        embed = discord.Embed(
+            title="📊 Poll",
+            description=question,
+            color=0x9b59b6
+        )
+        embed.add_field(name="Option 1", value=option1, inline=True)
+        embed.add_field(name="Option 2", value=option2, inline=True)
+        embed.set_footer(text="React with 1️⃣ or 2️⃣ to vote!")
+        
+        message = await ctx.send(embed=embed)
+        await message.add_reaction("1️⃣")
+        await message.add_reaction("2️⃣")
 
 async def setup(bot):
+    await bot.add_cog(FunCommands(bot))async def setup(bot):
     await bot.add_cog(ModCommands(bot))
