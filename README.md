@@ -1,3 +1,4 @@
+```markdown
 # DigamberGPT V2 PRO — Discord AI Bot
 
 A free, powerful AI chatbot for Discord using DeepSeek API.
@@ -17,10 +18,58 @@ A free, powerful AI chatbot for Discord using DeepSeek API.
 
 ### 1. Clone Repo
 ```bash
-git clone https://github.com/yourusername/digambergpt-v2-pro.git
+git clone https://github.com/thedigamber/digamber-gpt-discord.git
+cd digamber-gpt-discord
 ```
-cd digambergpt-v2-pro
 
+2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Set Environment Variables (Render / local .env)
+
+```
+DISCORD_TOKEN=your_bot_token
+DEEPSEEK_API_KEY=your_deepseek_key
+```
+
+4. Deploy to Render
+
+· Select "Web Service" → Python
+· Build Command: pip install -r requirements.txt
+· Start Command: python main.py
+· Logs auto-create & bot stays online.
+
+5. Discord Setup
+
+Set AI chat channel:
+
+```bash
+/setchannel #your-channel
+```
+
+Ask bot anything:
+
+```bash
+/ask What is the meaning of life?
+```
+
+Enjoy 🚀
+
+---
+
+Note: channels.json automatically creates on first run.
+
+```
+
+---
+
+## **6. channels.json** 
+```json
+{}
+```
 2. Install Dependencies
 ```
 pip install -r requirements.txt
