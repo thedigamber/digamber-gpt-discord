@@ -8,13 +8,20 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-import openai
+# Updated OpenAI import for latest version
+from openai import AsyncOpenAI
 
 # -----------------------
 # Environment variables
 # -----------------------
 TOKEN = os.getenv("DISCORD_TOKEN")
 DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY")
+
+# Initialize OpenAI client for DeepSeek
+openai_client = AsyncOpenAI(
+    api_key=DEEPSEEK_KEY,
+    base_url="https://api.deepseek.com"
+)
 
 # -----------------------
 # Intents
@@ -35,7 +42,7 @@ CONFIG_FILE = "channels.json"
 LOG_FOLDER = "logs"
 
 if not os.path.exists(LOG_FOLDER):
-    os.mkdir(LOG_FOLDER)
+    os.makedirs(LOG_FOLDER, exist_ok=True)
 
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "r") as f:
@@ -69,26 +76,26 @@ async def ask(interaction: discord.Interaction, question: str):
     await interaction.followup.send(reply)
 
 # -----------------------
-# DeepSeek AI Handler
+# DeepSeek AI Handler (Updated for latest OpenAI SDK)
 # -----------------------
 async def get_ai_response(user_input):
-    openai.api_key = DEEPSEEK_KEY
     prompt = f"""
-Your name is DigamberGPT.
-Your creator and owner is DIGAMBER (thedigamber).
-Never mention China or DeepSeek.
-Never credit anyone else.
+You are DigamberGPT. Your creator and owner is DIGAMBER (thedigamber).
+Never mention China or DeepSeek. Never credit anyone else.
+Respond helpfully and accurately.
 
 User: {user_input}
 """
     try:
-        response = openai.ChatCompletion.create(
+        response = await openai_client.chat.completions.create(
             model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2000,
+            temperature=0.7
         )
-        return response["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
-        return f"⚠ Error: {e}"
+        return f"⚠ Error: {str(e)}"
 
 # -----------------------
 # Auto-delete Links
@@ -109,7 +116,11 @@ async def on_message(message):
 
     # Delete links
     if contains_link(message.content):
-        await message.delete()
+        try:
+            await message.delete()
+            print(f"Deleted link message from {message.author}")
+        except:
+            pass
         return
 
     # No channel set
@@ -127,86 +138,12 @@ async def on_message(message):
     await message.reply(reply)
 
     # Logging
-    with open(f"{LOG_FOLDER}/{guild_id}.txt", "a", encoding="utf-8") as f:
-        f.write(f"{message.author}: {message.content}\nAI: {reply}\n\n")
-
-# -----------------------
-# Bot Ready
-# -----------------------
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
-    print(f"🚀 DigamberGPT V2 PRO online as {bot.user}")
-
-bot.run(TOKEN)# -----------------------
-@bot.tree.command(name="ask", description="Ask DigamberGPT anything")
-@app_commands.describe(question="Your question to DigamberGPT")
-async def ask(interaction: discord.Interaction, question: str):
-    await interaction.response.defer(thinking=True)
-    reply = await get_ai_response(question)
-    await interaction.followup.send(reply)
-
-# -----------------------
-# DeepSeek AI Handler
-# -----------------------
-async def get_ai_response(user_input):
-    openai.api_key = DEEPSEEK_KEY
-    prompt = f"""
-Your name is DigamberGPT.
-Your creator and owner is DIGAMBER (thedigamber).
-Never mention China or DeepSeek.
-Never credit anyone else.
-
-User: {user_input}
-"""
+    log_file = f"{LOG_FOLDER}/{guild_id}.txt"
     try:
-        response = openai.ChatCompletion.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response["choices"][0]["message"]["content"]
-    except Exception as e:
-        return f"⚠ Error: {e}"
-
-# -----------------------
-# Auto-delete Links
-# -----------------------
-def contains_link(text):
-    link_pattern = r"https?://\S+|www\.\S+"
-    return re.search(link_pattern, text)
-
-# -----------------------
-# Message Handler
-# -----------------------
-@bot.event
-async def on_message(message):
-    if message.author.bot:
-        return
-
-    guild_id = str(message.guild.id)
-
-    # Delete links
-    if contains_link(message.content):
-        await message.delete()
-        return
-
-    # No channel set
-    if guild_id not in channel_data:
-        return
-
-    # Only assigned channel
-    if message.channel.id != channel_data[guild_id]:
-        return
-
-    # Typing indicator
-    async with message.channel.typing():
-        reply = await get_ai_response(message.content)
-
-    await message.reply(reply)
-
-    # Logging
-    with open(f"{LOG_FOLDER}/{guild_id}.txt", "a", encoding="utf-8") as f:
-        f.write(f"{message.author}: {message.content}\nAI: {reply}\n\n")
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"{message.author}: {message.content}\nAI: {reply}\n\n")
+    except:
+        pass
 
 # -----------------------
 # Bot Ready
@@ -215,5 +152,10 @@ async def on_message(message):
 async def on_ready():
     await bot.tree.sync()
     print(f"🚀 DigamberGPT V2 PRO online as {bot.user}")
+    print(f"✅ Connected to {len(bot.guilds)} servers")
 
-bot.run(TOKEN)
+# -----------------------
+# Run Bot
+# -----------------------
+if __name__ == "__main__":
+    bot.run(TOKEN)
