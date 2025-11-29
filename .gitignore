@@ -1,1 +1,47 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Discord & Bot files
+channels.json
+logs/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Deployment
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite3
+
+# Temporary files
+temp/
+tmp/
