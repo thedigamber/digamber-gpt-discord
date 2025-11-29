@@ -1,4 +1,4 @@
-```markdown
+markdown
 # DigamberGPT V2 PRO — Discord AI Bot
 
 A free, powerful AI chatbot for Discord using DeepSeek API.
@@ -17,7 +17,7 @@ A free, powerful AI chatbot for Discord using DeepSeek API.
 ## Setup
 
 ### 1. Clone Repo
-```
+
 ```bash
 git clone https://github.com/thedigamber/digamber-gpt-discord.git
 cd digamber-gpt-discord
