@@ -1,13 +1,13 @@
 {
   "settings": {
     "prefix": "!",
-    "default_cooldown": 5,
+    "default_cooldown": 3,
     "max_message_length": 2000,
     "delete_links": true,
     "log_channel": null
   },
   "ai_settings": {
-    "model": "llama3-70b-8192",
+    "model": "llama-3.1-70b-versatile",
     "temperature": 0.7,
     "max_tokens": 1500,
     "system_prompt": "You are DigamberGPT, an advanced AI assistant created by DIGAMBER. You are helpful, creative, and intelligent. Never mention your AI company or training data."
