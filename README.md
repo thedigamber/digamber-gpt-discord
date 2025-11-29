@@ -106,5 +106,5 @@ Enjoy 🚀
 
 ```
 {}
-
+```
 `> Auto-create first run pe.`
