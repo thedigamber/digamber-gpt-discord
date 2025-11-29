@@ -2,11 +2,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import json
-import aiohttp
-import asyncio
+import os
 from groq import Groq
 from datetime import datetime, timedelta
-import aiofiles
 
 class AICommands(commands.Cog):
     def __init__(self, bot):
@@ -16,77 +14,46 @@ class AICommands(commands.Cog):
         self.user_stats = {}
         self.cooldowns = {}
 
-    @commands.hybrid_command(name="ai", description="Chat with advanced AI")
-    @app_commands.describe(message="Your message to the AI", context="Additional context (optional)")
-    async def ai_chat(self, ctx, message: str, context: str = None):
-        """Advanced AI chat with context memory"""
-        # Cooldown check
-        if await self.check_cooldown(ctx):
-            return
-            
-        await ctx.defer()
-        
-        # Get or create conversation
-        conv_id = f"{ctx.guild.id}-{ctx.channel.id}"
-        if conv_id not in self.conversations:
-            self.conversations[conv_id] = []
-            
-        # Build conversation context
-        messages = self.conversations[conv_id][-10:]  # Keep last 10 messages
-        messages.append({"role": "user", "content": message})
-        
+    async def get_ai_response(self, user_input):
+        """Get AI response - used by both commands and auto-response"""
         try:
+            prompt = f"""
+You are DigamberGPT, an advanced AI assistant created by DIGAMBER. 
+You are helpful, creative, and intelligent. 
+Never mention that you are an AI model or your training data.
+Respond naturally and helpfully.
+
+User: {user_input}
+"""
+            
             response = self.groq.chat.completions.create(
-                model="llama3-70b-8192",
-                messages=messages,
-                temperature=0.8,
-                max_tokens=1500
+                model="llama3-8b-8192",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=1000
             )
             
-            reply = response.choices[0].message.content
-            
-            # Update conversation
-            messages.append({"role": "assistant", "content": reply})
-            self.conversations[conv_id] = messages
-            
-            # Update stats
-            self.update_stats(ctx.author.id)
-            
-            # Send response
-            embed = discord.Embed(
-                title="🤖 DigamberGPT Response",
-                description=reply,
-                color=0x00ff00,
-                timestamp=datetime.now()
-            )
-            embed.set_footer(text=f"Requested by {ctx.author.display_name}")
-            
-            await ctx.followup.send(embed=embed)
+            return response.choices[0].message.content
             
         except Exception as e:
-            await ctx.followup.send(f"❌ Error: {str(e)}")
+            return f"❌ Error: {str(e)}"
 
-    @commands.hybrid_command(name="image", description="Generate AI images")
-    @app_commands.describe(prompt="Description of the image you want")
-    async def generate_image(self, ctx, prompt: str):
-        """AI image generation (placeholder - can integrate with stable diffusion)"""
+    @commands.hybrid_command(name="ask", description="Ask anything to AI")
+    @app_commands.describe(question="Your question")
+    async def ask_ai(self, ctx, question: str):
+        """AI command for non-AI channels"""
         await ctx.defer()
         
-        # This is a placeholder - you can integrate with actual image generation APIs
-        embed = discord.Embed(
-            title="🎨 Image Generation",
-            description=f"**Prompt:** {prompt}\n\n*Image generation feature coming soon!*",
-            color=0x9b59b6
-        )
-        await ctx.followup.send(embed=embed)
+        reply = await self.get_ai_response(question)
+        await ctx.followup.send(f"**{ctx.author.display_name}:** {question}\n\n**DigamberGPT:** {reply}")
 
-    @commands.hybrid_command(name="clear", description="Clear conversation history")
+    @commands.hybrid_command(name="clear", description="Clear your conversation history")
     async def clear_chat(self, ctx):
         """Clear AI conversation history"""
-        conv_id = f"{ctx.guild.id}-{ctx.channel.id}"
-        if conv_id in self.conversations:
-            self.conversations[conv_id] = []
-            await ctx.send("✅ Conversation history cleared!")
+        user_id = ctx.author.id
+        if user_id in self.conversations:
+            self.conversations[user_id] = []
+            await ctx.send("✅ Your conversation history cleared!")
         else:
             await ctx.send("ℹ️ No conversation history to clear.")
 
@@ -106,20 +73,6 @@ class AICommands(commands.Cog):
         embed.set_footer(text="Keep exploring! 🚀")
         
         await ctx.send(embed=embed)
-
-    async def check_cooldown(self, ctx):
-        """Check and enforce cooldown"""
-        user_id = ctx.author.id
-        now = datetime.now()
-        
-        if user_id in self.cooldowns:
-            last_used = self.cooldowns[user_id]
-            if now - last_used < timedelta(seconds=5):
-                await ctx.send("⏳ Please wait 5 seconds between commands!", ephemeral=True)
-                return True
-                
-        self.cooldowns[user_id] = now
-        return False
 
     def update_stats(self, user_id):
         """Update user statistics"""
