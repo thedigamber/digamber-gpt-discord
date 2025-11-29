@@ -1,1 +1,11 @@
-hello
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+.idea
+*.log
+logs/
+database/
+temp/
