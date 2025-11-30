@@ -12,7 +12,7 @@ class AICommands(commands.Cog):
         self.groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
         self.conversations = {}
         self.user_stats = {}
-        self.cooldowns = {}
+        self.cooldowns = }
 
     async def get_ai_response(self, user_input):
         """Get AI response - used by both commands and auto-response"""
@@ -52,10 +52,26 @@ User: {user_input}
     @app_commands.describe(question="Your question")
     async def ask_ai(self, ctx, question: str):
         """AI command for non-AI channels"""
-        await ctx.defer()
-        
-        reply = await self.get_ai_response(question)
-        await ctx.followup.send(f"**{ctx.author.display_name}:** {question}\n\n**DigamberGPT:** {reply}")
+        # Universal approach for both slash and text commands
+        try:
+            # Defer only for slash commands
+            if ctx.interaction:
+                await ctx.defer()
+            
+            reply = await self.get_ai_response(question)
+            
+            # Send response based on command type
+            if ctx.interaction:
+                await ctx.followup.send(f"**{ctx.author.display_name}:** {question}\n\n**DigamberGPT:** {reply}")
+            else:
+                await ctx.send(f"**{ctx.author.display_name}:** {question}\n\n**DigamberGPT:** {reply}")
+                
+        except Exception as e:
+            error_msg = f"❌ Command error: {str(e)}"
+            if ctx.interaction:
+                await ctx.followup.send(error_msg)
+            else:
+                await ctx.send(error_msg)
 
     @commands.hybrid_command(name="clear", description="Clear your conversation history")
     async def clear_chat(self, ctx):
@@ -93,13 +109,29 @@ User: {user_input}
     @commands.hybrid_command(name="test", description="Test AI functionality")
     async def test_ai(self, ctx):
         """Test AI with simple question"""
-        await ctx.defer()
-        response = await self.get_ai_response("Hello, who are you?")
-        
-        if "❌" in response or "⚠️" in response:
-            await ctx.followup.send(f"❌ **Test Failed:** {response}")
-        else:
-            await ctx.followup.send(f"✅ **Test Successful!**\n\n**AI Response:** {response}")
+        try:
+            if ctx.interaction:
+                await ctx.defer()
+            
+            response = await self.get_ai_response("Hello, who are you?")
+            
+            if "❌" in response or "⚠️" in response:
+                if ctx.interaction:
+                    await ctx.followup.send(f"❌ **Test Failed:** {response}")
+                else:
+                    await ctx.send(f"❌ **Test Failed:** {response}")
+            else:
+                if ctx.interaction:
+                    await ctx.followup.send(f"✅ **Test Successful!**\n\n**AI Response:** {response}")
+                else:
+                    await ctx.send(f"✅ **Test Successful!**\n\n**AI Response:** {response}")
+                    
+        except Exception as e:
+            error_msg = f"❌ Test error: {str(e)}"
+            if ctx.interaction:
+                await ctx.followup.send(error_msg)
+            else:
+                await ctx.send(error_msg)
 
     @commands.hybrid_command(name="setchannel", description="Set AI auto-response channel")
     @commands.has_permissions(administrator=True)
