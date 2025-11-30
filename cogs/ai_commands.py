@@ -17,6 +17,10 @@ class AICommands(commands.Cog):
     async def get_ai_response(self, user_input):
         """Get AI response - used by both commands and auto-response"""
         try:
+            # Check if API key is set
+            if not os.getenv("GROQ_API_KEY"):
+                return "❌ **Configuration Error:** Groq API key not set. Please check environment variables."
+            
             prompt = f"""
 You are DigamberGPT, an advanced AI assistant created by DIGAMBER. 
 You are helpful, creative, and intelligent. 
@@ -27,7 +31,7 @@ User: {user_input}
 """
             
             response = self.groq.chat.completions.create(
-                model="llama-3.1-8b-instant",  # 🚨 UPDATED MODEL
+                model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
                 max_tokens=1000
@@ -36,7 +40,13 @@ User: {user_input}
             return response.choices[0].message.content
             
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            error_msg = str(e)
+            if "authentication" in error_msg.lower():
+                return "❌ **API Error:** Invalid Groq API key. Please check your environment variables."
+            elif "rate limit" in error_msg.lower():
+                return "⚠️ **Rate Limit:** Too many requests. Please try again in a moment."
+            else:
+                return f"❌ **Error:** {error_msg}"
 
     @commands.hybrid_command(name="ask", description="Ask anything to AI")
     @app_commands.describe(question="Your question")
@@ -73,6 +83,34 @@ User: {user_input}
         embed.set_footer(text="Keep exploring! 🚀")
         
         await ctx.send(embed=embed)
+
+    # NEW COMMANDS ADDED
+    @commands.hybrid_command(name="ping", description="Check bot status")
+    async def ping(self, ctx):
+        """Check bot latency"""
+        latency = round(self.bot.latency * 1000)
+        await ctx.send(f"🏓 Pong! **Latency:** {latency}ms\n**Status:** Online ✅")
+
+    @commands.hybrid_command(name="test", description="Test AI functionality")
+    async def test_ai(self, ctx):
+        """Test AI with simple question"""
+        await ctx.defer()
+        response = await self.get_ai_response("Hello, who are you?")
+        
+        if "❌" in response or "⚠️" in response:
+            await ctx.followup.send(f"❌ **Test Failed:** {response}")
+        else:
+            await ctx.followup.send(f"✅ **Test Successful!**\n\n**AI Response:** {response}")
+
+    @commands.hybrid_command(name="setchannel", description="Set AI auto-response channel")
+    @commands.has_permissions(administrator=True)
+    async def set_channel(self, ctx, channel: discord.TextChannel):
+        """Set AI channel for auto-response"""
+        try:
+            self.bot.ai_channels[str(ctx.guild.id)] = str(channel.id)
+            await ctx.send(f"✅ **AI Channel Set!**\nI will auto-respond in {channel.mention}")
+        except Exception as e:
+            await ctx.send(f"❌ Error: {e}")
 
     def update_stats(self, user_id):
         """Update user statistics"""
