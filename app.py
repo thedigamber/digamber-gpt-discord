@@ -23,6 +23,8 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
+TOKEN = os.getenv("DISCORD_TOKEN")
+
 class ChatGPTBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
@@ -52,9 +54,19 @@ class ChatGPTBot(commands.Bot):
                 print(f"❌ Failed to load {cog}: {e}")
                 traceback.print_exc()
         
-        # Sync commands
-        await self.tree.sync()
-        print("✅ Slash commands synced")
+        # Sync commands with better handling
+        try:
+            print("🔄 Syncing slash commands...")
+            synced = await self.tree.sync()
+            print(f"✅ Successfully synced {len(synced)} slash commands")
+            
+            # Print all commands
+            for cmd in synced:
+                print(f"   - /{cmd.name}")
+                
+        except Exception as e:
+            print(f"❌ Slash command sync failed: {e}")
+            traceback.print_exc()
         
         # Start tasks
         self.update_presence.start()
@@ -64,11 +76,23 @@ class ChatGPTBot(commands.Bot):
         print(f"📊 Servers: {len(self.guilds)}")
         print(f"👥 Users: {sum(g.member_count for g in self.guilds)}")
         
+        # Print available commands
+        commands_list = [cmd.name for cmd in self.tree.get_commands()]
+        print(f"🎯 Available commands: {', '.join(commands_list)}")
+        
         # Start Flask in background for Render
         if os.environ.get('RENDER'):
             import threading
             threading.Thread(target=run_flask, daemon=True).start()
             print("🌐 Flask server started")
+
+    async def on_guild_join(self, guild):
+        """Auto-sync commands when bot joins new server"""
+        try:
+            await self.tree.sync(guild=guild)
+            print(f"✅ Commands synced for new server: {guild.name}")
+        except Exception as e:
+            print(f"❌ Failed to sync commands for {guild.name}: {e}")
 
     async def on_message(self, message):
         if message.author.bot:
@@ -127,5 +151,5 @@ class ChatGPTBot(commands.Bot):
 
 # Run bot
 if __name__ == "__main__":
-    bot = ChatGPTBot()
-    bot.run(os.getenv("DISCORD_TOKEN"))
+    bot = DigamberGptBot()
+    bot.run(TOKEN)
