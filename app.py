@@ -151,5 +151,5 @@ class ChatGPTBot(commands.Bot):
 
 # Run bot
 if __name__ == "__main__":
-    bot = DigamberGptBot()
+    bot = ChatGPTBot()
     bot.run(TOKEN)
